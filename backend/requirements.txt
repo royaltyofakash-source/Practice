@@ -2,3 +2,11 @@ fastapi
 uvicorn
 sqlalchemy
 psycopg2-binary
+PyJWT
+pgvector
+sentence-transformers
+python-multipart
+pypdf
+python-docx
+python-dotenv
+groq

@@ -1,16 +1,31 @@
-
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import AuthProvider from './context/AuthContext';
+import { Login } from './pages/login/Login';
+import { Register } from './pages/register/Register';
+import { Dashboard } from './pages/dashboard/Dashboard';
+import ProtectedRoute from './components/common/ProtectedRoute';
 
 function App() {
-
   return (
-    <>
-    <h1 className="text-4xl font-bold bg-black text-white">Welcome to the App</h1>
-
-    <h2>Features</h2>
-
-    <h3>h3</h3>
-    </>
-  )
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  );
 }
 
-export default App
+export default App;
