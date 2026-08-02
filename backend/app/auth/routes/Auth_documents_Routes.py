@@ -1,11 +1,11 @@
 import os
 from fastapi import APIRouter, Depends, UploadFile, File
 from sqlalchemy.orm import Session
-from app.shared.database.session import get_db
-from app.auth.dependencies import get_current_user
-from app.auth.services import document_service
-from app.auth.repositories import document_repository
-from app.auth.schemas.request import QueryRequest
+from app.auth.Auth_database import get_db
+from app.auth.Auth_dependencies import get_current_user
+from app.auth.services import Auth_document_Services as document_service
+from app.auth.models import Auth_document_Models as document_model
+from app.auth.schemas.Auth_request_Schemas import QueryRequest
 
 router = APIRouter(prefix="/documents")
 
@@ -39,7 +39,7 @@ def list_documents(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    docs = document_repository.get_documents_by_user(db, current_user.id)
+    docs = document_model.get_documents_by_user(db, current_user.id)
     return [{"id": d.id, "filename": d.filename, "uploaded_at": d.uploaded_at} for d in docs]
 
 @router.post("/query")

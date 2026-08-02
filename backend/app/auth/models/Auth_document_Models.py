@@ -1,5 +1,28 @@
-from sqlalchemy.orm import Session
-from app.auth.models.document import Document, DocumentChunk
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text
+from sqlalchemy.orm import relationship, Session
+from datetime import datetime
+from pgvector.sqlalchemy import Vector
+from app.auth.Auth_database import Base
+
+class Document(Base):
+    __tablename__ = "documents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    filename = Column(String)
+    uploaded_at = Column(DateTime, default=datetime.utcnow)
+
+    chunks = relationship("DocumentChunk", back_populates="document")
+
+class DocumentChunk(Base):
+    __tablename__ = "document_chunks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    document_id = Column(Integer, ForeignKey("documents.id"))
+    content = Column(Text)
+    embedding = Column(Vector(384))
+
+    document = relationship("Document", back_populates="chunks")
 
 def create_document(db: Session, user_id: int, filename: str):
     new_doc = Document(user_id=user_id, filename=filename)

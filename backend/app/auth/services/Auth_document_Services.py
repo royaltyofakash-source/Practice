@@ -3,9 +3,10 @@ from io import BytesIO
 from pypdf import PdfReader
 from docx import Document as DocxDocument
 from sqlalchemy.orm import Session
-from app.auth.repositories import document_repository
-from app.shared.database.embeddings import get_embedding
-from app.shared.database.llm import generate_answer
+from app.auth.models import Auth_document_Models as document_model
+from app.auth.Auth_database import get_embedding
+from app.auth.Auth_database import generate_answer
+from app.auth.Auth_database import extract_text_from_image, extract_text_from_scanned_pdf
 
 def process_document(db: Session, user_id: int, filename: str, file_content: bytes):
     if filename.lower().endswith(".pdf"):
@@ -23,6 +24,8 @@ def process_document(db: Session, user_id: int, filename: str, file_content: byt
                 text += paragraph.text + "\n"
     elif filename.lower().endswith(".txt"):
         text = file_content.decode("utf-8")
+    elif filename.lower().endswith((".png", ".jpg", ".jpeg", ".webp")):
+        text = extract_text_from_image(file_content)
     else:
         # Try to decode as UTF-8 for other text files
         try:
@@ -30,6 +33,11 @@ def process_document(db: Session, user_id: int, filename: str, file_content: byt
         except UnicodeDecodeError:
             raise ValueError(f"Unsupported file format. Please upload PDF, DOCX, or TXT files.")
         
+    # Scanned PDFs have no embedded text layer, so fall back to OCR
+    if filename.lower().endswith(".pdf") and len(text.strip()) < 20:
+        print("DEBUG: PDF has little or no embedded text, falling back to OCR")
+        text = extract_text_from_scanned_pdf(file_content)
+
     if not text.strip():
         raise ValueError("No text content found in the document")
     
@@ -41,12 +49,12 @@ def process_document(db: Session, user_id: int, filename: str, file_content: byt
     
     print(f"DEBUG: Created {len(chunks)} chunks")
     
-    doc_record = document_repository.create_document(db, user_id, filename)
+    doc_record = document_model.create_document(db, user_id, filename)
     print(f"DEBUG: Created document with ID: {doc_record.id}")
     
     for idx, chunk in enumerate(chunks):
         embedding = get_embedding(chunk)
-        document_repository.create_chunk(db, doc_record.id, chunk, embedding)
+        document_model.create_chunk(db, doc_record.id, chunk, embedding)
         if idx == 0:
             print(f"DEBUG: First chunk: {chunk[:100]}...")
             print(f"DEBUG: Embedding dimensions: {len(embedding)}")
@@ -57,7 +65,7 @@ def process_document(db: Session, user_id: int, filename: str, file_content: byt
 
 def answer_query(db: Session, user_id: int, question: str) -> str:
     query_embedding = get_embedding(question)
-    chunks = document_repository.search_similar_chunks(db, user_id, query_embedding)
+    chunks = document_model.search_similar_chunks(db, user_id, query_embedding)
     
     print(f"DEBUG: Found {len(chunks)} chunks for user {user_id}")
     if chunks:

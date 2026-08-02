@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.shared.database.base import Base, engine
+from app.auth.Auth_database import Base, engine
 from app.router import router
 
 # Load environment variables from .env file

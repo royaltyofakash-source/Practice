@@ -1,5 +1,14 @@
+from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import Session
-from app.auth.models.user import User
+from app.auth.Auth_database import Base
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    fullname = Column(String, nullable=False)
+    email = Column(String, unique=True, index=True)
+    password = Column(String)
 
 def get_user_by_email(db: Session, email: str):
     return db.query(User).filter(User.email == email).first()
@@ -10,4 +19,3 @@ def create_user(db: Session, fullname: str, email: str, password: str):
     db.commit()
     db.refresh(new_user)
     return new_user
-# hello
