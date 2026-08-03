@@ -1,14 +1,21 @@
 import os
+import hashlib
 from io import BytesIO
 from pypdf import PdfReader
 from docx import Document as DocxDocument
 from sqlalchemy.orm import Session
-from app.auth.models import Auth_document_Models as document_model
-from app.auth.Auth_database import get_embedding
-from app.auth.Auth_database import generate_answer
-from app.auth.Auth_database import extract_text_from_image, extract_text_from_scanned_pdf
+from app.rag.models import documentModels as document_model
+from app.rag.services.embeddings import get_embedding
+from app.rag.services.llm import generate_answer
+from app.rag.services.ocr import extract_text_from_image, extract_text_from_scanned_pdf
 
 def process_document(db: Session, user_id: int, filename: str, file_content: bytes):
+    content_hash = hashlib.sha256(file_content).hexdigest()
+
+    existing_doc = document_model.get_document_by_hash(db, user_id, content_hash)
+    if existing_doc:
+        raise ValueError(f"This document has already been uploaded (as '{existing_doc.filename}').")
+
     if filename.lower().endswith(".pdf"):
         reader = PdfReader(BytesIO(file_content))
         text = ""
@@ -49,7 +56,7 @@ def process_document(db: Session, user_id: int, filename: str, file_content: byt
     
     print(f"DEBUG: Created {len(chunks)} chunks")
     
-    doc_record = document_model.create_document(db, user_id, filename)
+    doc_record = document_model.create_document(db, user_id, filename, content_hash)
     print(f"DEBUG: Created document with ID: {doc_record.id}")
     
     for idx, chunk in enumerate(chunks):

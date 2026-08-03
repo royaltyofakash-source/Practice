@@ -1,11 +1,13 @@
-from dotenv import load_dotenv
+from app.config import load_env
+
+# Load environment variables from .env file.
+# Must run before importing app.database, which reads DATABASE_URL at import time.
+load_env()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.auth.Auth_database import Base, engine
+from app.database import Base, engine
 from app.router import router
-
-# Load environment variables from .env file
-load_dotenv()
 
 Base.metadata.create_all(bind=engine)
 

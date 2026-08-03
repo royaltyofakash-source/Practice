@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.auth.Auth_database import get_db
-from app.auth.schemas.Auth_request_Schemas import RegisterRequest
-from app.auth.schemas.Auth_response_Schemas import TokenResponse
-from app.auth.services import Auth_auth_Services as auth_service
+from app.database import get_db
+from app.auth.schemas.requestSchemas import RegisterRequest
+from app.auth.schemas.responseSchemas import TokenResponse
+from app.auth.services import authServices as auth_service
 
 router = APIRouter()
 

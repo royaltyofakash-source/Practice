@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
-from app.auth.models import Auth_user_Models as user_model
-from app.auth.Auth_security import create_access_token
+from app.auth.models import userModels as user_model
+from app.auth.core.security import create_access_token
 
 def register_user(db: Session, fullname: str, email: str, password: str):
     existing_user = user_model.get_user_by_email(db, email)

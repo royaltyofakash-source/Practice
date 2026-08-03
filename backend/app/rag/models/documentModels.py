@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text
 from sqlalchemy.orm import relationship, Session
 from datetime import datetime
 from pgvector.sqlalchemy import Vector
-from app.auth.Auth_database import Base
+from app.database import Base
 
 class Document(Base):
     __tablename__ = "documents"
@@ -10,6 +10,7 @@ class Document(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     filename = Column(String)
+    content_hash = Column(String, index=True)
     uploaded_at = Column(DateTime, default=datetime.utcnow)
 
     chunks = relationship("DocumentChunk", back_populates="document")
@@ -24,12 +25,19 @@ class DocumentChunk(Base):
 
     document = relationship("Document", back_populates="chunks")
 
-def create_document(db: Session, user_id: int, filename: str):
-    new_doc = Document(user_id=user_id, filename=filename)
+def create_document(db: Session, user_id: int, filename: str, content_hash: str):
+    new_doc = Document(user_id=user_id, filename=filename, content_hash=content_hash)
     db.add(new_doc)
     db.commit()
     db.refresh(new_doc)
     return new_doc
+
+def get_document_by_hash(db: Session, user_id: int, content_hash: str):
+    return (
+        db.query(Document)
+        .filter(Document.user_id == user_id, Document.content_hash == content_hash)
+        .first()
+    )
 
 def create_chunk(db: Session, document_id: int, content: str, embedding: list[float]):
     new_chunk = DocumentChunk(document_id=document_id, content=content, embedding=embedding)

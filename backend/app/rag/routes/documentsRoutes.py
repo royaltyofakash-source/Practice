@@ -1,16 +1,12 @@
-import os
 from fastapi import APIRouter, Depends, UploadFile, File
 from sqlalchemy.orm import Session
-from app.auth.Auth_database import get_db
-from app.auth.Auth_dependencies import get_current_user
-from app.auth.services import Auth_document_Services as document_service
-from app.auth.models import Auth_document_Models as document_model
-from app.auth.schemas.Auth_request_Schemas import QueryRequest
+from app.database import get_db
+from app.auth.core.dependencies import get_current_user
+from app.rag.services import documentServices as document_service
+from app.rag.models import documentModels as document_model
+from app.rag.schemas.requestSchemas import QueryRequest
 
 router = APIRouter(prefix="/documents")
-
-UPLOAD_DIR = "uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.post("/upload")
 async def upload_document(
@@ -20,11 +16,7 @@ async def upload_document(
 ):
     try:
         content = await file.read()
-        
-        file_path = os.path.join(UPLOAD_DIR, file.filename)
-        with open(file_path, "wb") as f:
-            f.write(content)
-            
+
         doc = document_service.process_document(db, current_user.id, file.filename, content)
         return {"id": doc.id, "filename": doc.filename}
     except ValueError as e:
